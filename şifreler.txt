@@ -1,0 +1,2 @@
+şifre = admin123
+kullanıcı = admin123
