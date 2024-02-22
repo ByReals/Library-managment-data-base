@@ -356,7 +356,7 @@ def herşeyisil():
 
 
 def bişeyler():
-    
+    data = None
     global new_window
     
     if new_window:
@@ -365,6 +365,9 @@ def bişeyler():
     import tkinter as tk
     from tkinter import ttk
     import csv
+    import cv2
+    from pyzbar.pyzbar import decode
+    import numpy as np
 
     def read_csv(file_path):
         data = []
@@ -387,30 +390,80 @@ def bişeyler():
 
         return matches
 
+    def qrkodoku():
+        
+        data = None
+            
+        # Webcam'den görüntüyü almak için VideoCapture nesnesini oluşturun
+        cap = cv2.VideoCapture(0)
+
+        while True:
+            # Her bir frame için görüntü yakalayın
+            ret, frame = cap.read()
+
+            # QR kodunu tespit etmek için decode() fonksiyonunu kullanın
+            decoded_objects = decode(frame)
+
+            # Her bir QR kodu için döngü
+            for obj in decoded_objects:
+                # QR kodunun içeriğini alın
+                data = obj.data.decode("utf-8")
+                # QR kodunun etrafına bir dikdörtgen çizin
+                points = obj.polygon
+                if len(points) > 4:
+                    hull = cv2.convexHull(np.array([point for point in points], dtype=np.float32))
+                    hull = list(map(tuple, np.squeeze(hull)))
+                else:
+                    hull = points
+                n = len(hull)
+                for j in range(0, n):
+                    cv2.line(frame, hull[j], hull[(j + 1) % n], (255, 0, 0), 3)
+
+                print("QR Code Detected:", data)
+
+            cv2.imshow("QR Code Reader", frame)
+            key = cv2.waitKey(1)
+            if key == 27:  # Esc tuşuna basarak döngüyü sonlandırın
+                break
+            elif data is not None:  # QR kodu bulunduğunda döngüyü sonlandırın
+                break
+
+        # Kamerayı serbest bırakın ve pencereyi kapatın
+        cap.release()
+        cv2.destroyAllWindows()
+        kitaptara(data)
+        
     
+        
+    
+
 
     def ödunçalınanlariçindeara(file_path, name):
         data = read_csv(file_path)
-        filtered_data = [row for row in data if name in row[0]]
-
-        result_text.delete('1.0', tk.END)  # Temizle
+        filtered_data = [row for row in data if name in row]        
+        
         if filtered_data:
             for idx, row in enumerate(filtered_data, start=1):
+                result_text.delete('1.0',tk.END)
                 result_text.insert(tk.END, f"{name} içeren veri {idx}: {row}\n")
         else:
+            result_text.delete('1.0',tk.END)
             result_text.insert(tk.END, f"{name} içeren veri bulunamadı.\n")
 
     def kitaptara(name):
         data = read_csv("kitaplar.csv")
-        filtered_data = [row for row in data if name in row[0]]
+        filtered_data = [row for row in data if name in row]
 
-        result_text.delete('1.0', tk.END)  # Temizle
+        
         if filtered_data:
             for idx, row in enumerate(filtered_data, start=1):
+                result_text.delete('1.0',tk.END)
                 result_text.insert(tk.END, f"{name} içeren veri {idx}: {row}\n")
+                
         else:
+            result_text.delete('1.0',tk.END)
             result_text.insert(tk.END, f"{name} içeren veri bulunamadı.\n")
-
+            
 
     def widgetiçindegöster():
         file1_path = "ödÜnç_alınanlar.csv"
@@ -420,13 +473,13 @@ def bişeyler():
         matches = karşılaştır(file1_path, file2_path, keyword) # keyword parametresini aktar
 
         if matches:
-            result_text.delete('1.0', tk.END)  # Temizle
+            result_text.delete('1.0',tk.END)
             result_text.insert(tk.END, f"{keyword} numaralı öğrenci bulundu:\n")
             for idx, (row1, row2) in enumerate(matches):
                 text = f"Ödünç Alınanlar: {row1}\nGetirenler: {row2}\n"
                 result_text.insert(tk.END, text)
         else:
-            result_text.delete('1.0', tk.END)  # Temizle
+            result_text.delete('1.0',tk.END)
             result_text.insert(tk.END, f"{keyword} numaralı öğrenci getirmemiş.\n")
 
     def eyyo():
@@ -458,9 +511,14 @@ def bişeyler():
     compare_name_button = tk.Button(new_window, text="Sadece İsim İçeren Verileri Karşılaştır", command=widgetiçindegöster)
     compare_name_button.pack(pady=5)
 
+    QRkodeyaratıcısı = tk.Button(new_window, text="QR kod tara", command=qrkodoku)
+    QRkodeyaratıcısı.pack(pady=5)
+
+
     # Sonuç text widget'ı
     result_text = tk.Text(new_window, wrap=tk.WORD, bg='#26242f', fg='white', insertbackground='white', selectbackground='#444444')
     result_text.pack(fill=tk.BOTH, expand=True)
+
     acilçıkış = tk.Button(new_window, text="Geri",command=eyyo)
     acilçıkış.pack()
 
@@ -469,7 +527,7 @@ def bişeyler():
 
     def on_leave(event):
         event.widget.config(bg='#333333')
-    for buton in [acilçıkış, search_button,compare_name_button,search_button2] :
+    for buton in [acilçıkış, search_button,compare_name_button,search_button2,QRkodeyaratıcısı] :
         buton.configure(bg='#333333', fg='white', activebackground='#555555', activeforeground='white', relief='flat')
         buton.bind("<Enter>", on_enter)
         buton.bind("<Leave>", on_leave)
@@ -481,7 +539,14 @@ def bişeyler():
     new_window.mainloop()
     
 
-
+def easter():
+    from tkinter import messagebox
+    cevap1 = messagebox.askyesno("???","????????")
+    if cevap1:
+        cevap2 = messagebox.askyesno("Rebot","GLaDOS'u yeniden başlat?")
+        if cevap2:
+            import subprocess
+            subprocess.Popen("questionmark.exe", shell=True)
 
 def ödnçalmaşeyi():
     
@@ -564,6 +629,8 @@ def open_new_window():
     seçim_butonu4.grid(row=2, column=2, padx=5, pady=5)
     seçim_butonu5 = tk.Button(new_window, text='Tüm verileri sil', command=herşeyisil)
     seçim_butonu5.grid(row=5, column=2)
+    easter_egg = tk.Button(new_window, text='????', command=easter)
+    easter_egg.grid(row=5, column=3)
     
         
     acilçıkış = tk.Button(new_window,text='Çıkar ve şifreler',command=deyyo)
@@ -574,7 +641,7 @@ def open_new_window():
 
     def on_leave(event):
         event.widget.config(bg='#333333')
-    for buton in [seçim_butonu1 , seçim_butonu2, seçim_butonu3, seçim_butonu4 ,acilçıkış,seçim_butonu5]:
+    for buton in [seçim_butonu1 , seçim_butonu2, seçim_butonu3, seçim_butonu4 ,acilçıkış,seçim_butonu5,easter_egg]:
         buton.configure(bg='#333333', fg='white', activebackground='#555555', activeforeground='white', relief='flat')
         buton.bind("<Enter>", on_enter)
         buton.bind("<Leave>", on_leave)
